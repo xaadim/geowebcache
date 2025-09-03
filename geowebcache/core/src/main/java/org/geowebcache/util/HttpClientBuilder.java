@@ -38,6 +38,8 @@ public class HttpClientBuilder {
     private AuthScope authscope = null;
 
     private Integer backendTimeoutMillis = null;
+    private static final HttpClientConnectionManagerFactory connectionManagerFactory =
+            HttpClientConnectionManagerFactory.getInstance();
 
     private boolean doAuthentication = false;
 
@@ -82,8 +84,9 @@ public class HttpClientBuilder {
 
         clientBuilder = HttpClients.custom();
         clientBuilder.useSystemProperties();
-        clientBuilder.setDefaultRequestConfig(this.connectionConfig);
-        clientBuilder.setConnectionManager(connectionManager);
+        clientBuilder.setConnectionManager(connectionManagerFactory.getConnectionManager());
+        // Note: concurrency parameter is now handled globally via HttpConnectionSettings
+        // The per-layer concurrency parameter is deprecated and ineffective
     }
 
     /*
