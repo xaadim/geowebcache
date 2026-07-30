@@ -14,8 +14,9 @@
 package org.geowebcache.util;
 
 import java.util.logging.Logger;
-import org.apache.http.conn.HttpClientConnectionManager;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+import org.apache.hc.core5.io.CloseMode;
 import org.geotools.util.logging.Logging;
 import org.geowebcache.config.HttpConnectionSettings;
 
@@ -62,9 +63,9 @@ public class HttpClientConnectionManagerFactory {
         this.settings = settings != null ? settings : new HttpConnectionSettings();
 
         // Close existing connection manager if it exists
-        if (connectionManager != null) {
+        if (this.connectionManager != null) {
             try {
-                connectionManager.shutdown();
+                this.connectionManager.close(CloseMode.GRACEFUL);
             } catch (Exception e) {
                 log.warning("Error closing existing connection manager: " + e.getMessage());
             }
@@ -86,15 +87,15 @@ public class HttpClientConnectionManagerFactory {
      * @return the HTTP connection manager
      */
     public HttpClientConnectionManager getConnectionManager() {
-        if (connectionManager == null) {
+        if (this.connectionManager == null) {
             synchronized (this) {
-                if (connectionManager == null) {
+                if (this.connectionManager == null) {
                     // Initialize with default settings if not already done
                     initialize(new HttpConnectionSettings());
                 }
             }
         }
-        return connectionManager;
+        return this.connectionManager;
     }
 
     /**
@@ -103,16 +104,16 @@ public class HttpClientConnectionManagerFactory {
      * @return the current HTTP connection settings
      */
     public HttpConnectionSettings getSettings() {
-        return settings != null ? settings : new HttpConnectionSettings();
+        return this.settings != null ? this.settings : new HttpConnectionSettings();
     }
 
     /** Shutdown the connection manager and release resources. This should be called during application shutdown. */
     public synchronized void shutdown() {
-        if (connectionManager != null) {
+        if (this.connectionManager != null) {
             try {
-                connectionManager.shutdown();
-                connectionManager = null;
-                settings = null;
+                this.connectionManager.close(CloseMode.GRACEFUL);
+                this.connectionManager = null;
+                this.settings = null;
                 log.info("HTTP connection manager shutdown completed");
             } catch (Exception e) {
                 log.warning("Error during connection manager shutdown: " + e.getMessage());
